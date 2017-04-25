@@ -29,7 +29,7 @@ iDYRUDEFSyYzRTRs8UNZACIwJGR9g8XTFVZBNmNi7oThzR0K+C+OfNY=
 public="ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCqHlQeSX7ewZClemUhODxceefR8vNBviJsSXeMHh15LlIvA80rbSkReXz4ozGqgt1vuBQr2czmnM+N6eNp4bGTPKtEXCSxVufn+0zYd1mMDsY/rKAOFQDGSS8onK+BKQnj1smHg4jzRsq1QQbA1OfS71Kt4zeWPok8myVK6pCtn7CVNii5FNhx2bIc3HUcGR8HooUIvWq9NsEi+VjnIc8yFxpHqFfG+O9RznxcXvm4QKHNDuqA/i/gJjewzhKCg/IcU2GH+ymVovuCXtdNxDX7hFl6mdQGn0qIchxdNLUBLgfl68j9k37CNagoq/BfS7cD4J53hSqGwjuQWuMHtFzZ ansible"
 hosts="192.168.128.101\tnode-01\n192.168.128.102\tnode-02\n192.168.128.103\tnode-03\n"
 ssh_conf="Host node-*\n\tIdentityFile ~/.ssh/ansible.id_rsa\n\tStrictHostKeyChecking=no\n\tUserKnownHostsFile=/dev/null\n"
-dir="/home/ubuntu/.ssh"
+dir="/home/vagrant/.ssh"
 
 if [[ "$(hostname)" =~ "01" ]]; then
   mkdir -p "$dir"
@@ -38,9 +38,9 @@ if [[ "$(hostname)" =~ "01" ]]; then
   echo -ne "$ssh_conf" >> "$dir/config"
   chmod 600 "$dir/ansible.id_rsa"
   chmod 644 "$dir/ansible.id_rsa.pub"
-  chown -R ubuntu: "$dir"
-  apt update -yqq
-  apt install -yqq ansible git
+  chown -R vagrant: "$dir"
+  yum install -y epel-release
+  yum install -y ansible git
 fi
 
 echo "$public"         >> "$dir/authorized_keys"
