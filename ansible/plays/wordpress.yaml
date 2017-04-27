@@ -79,6 +79,17 @@
         path: /etc/nginx/nginx.conf
         line: 'include /etc/nginx/sites-enabled/*;'
       notify: restart nginx
+    - name: create wordpress site
+      template:
+        src: ../templates/wordpress.nginx.j2
+        # dest: /etc/nginx/sites-enabled/wordpress
+        dest: /tmp/wordpress
+      vars:
+        #upstream_addr: "{{ hostvars[groups['php-fpm'][0]]['ansible_enp0s8']['ipv4']['address'] }}"
+        domainname: 'node-03'
+        wp_root: '/var/www/wordpress/html/wordpress'
+        upstream_addr: 'http://192.168.128.102/wordpress'
+
   handlers:
     - name: restart nginx
       service:
