@@ -45,7 +45,6 @@
         path: /etc/php-fpm.d/www.conf
         regexp: '^listen.allowed_clients ='
         line: "listen.allowed_clients = '{{ hostvars[groups['web'][0]]['ansible_enp0s8']['ipv4']['address'] }}'"
-      notify: restart php-fpm
     - systemd:
         name: php-fpm
         enabled: yes
