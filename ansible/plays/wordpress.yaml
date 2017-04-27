@@ -31,6 +31,7 @@
       mysql_user:
         name: '{{ mariadb_wordpress_dbuser }}'
         password: '{{ mariadb_wordpress_dbpass }}'
+        host: "{{ hostvars[groups['php-fpm'][0]]['ansible_hostname'] }}"
         priv: '*.*:ALL'
         state: present
 
@@ -42,11 +43,19 @@
 - name: install php-fpm
   hosts: php-fpm
   become: yes
+  vars_files:
+        - ../vars/wordpress.yaml
+
   tasks:
 
     - name: install php-fpm
       yum:
         name: php-fpm
+        state: latest
+
+    - name: install php-mysql
+      yum:
+        name: php-mysql
         state: latest
 
     - name: configure php-fpm listen addr 
@@ -67,6 +76,33 @@
       systemd:
         name: php-fpm
         enabled: yes
+
+    - name: create file hiearchy on app-server
+      file:
+        name: /var/www
+        state: directory
+
+    - name: check wp dir exists
+      file:
+        name: /var/www/wordpress/index.php
+        state: file
+      ignore_errors: yes
+      register: wp_exists
+
+    - name: download/unarchive wp
+      unarchive:
+        src: https://wordpress.org/latest.tar.gz
+        dest: /var/www
+        remote_src: true
+      when: wp_exists|failed
+
+    - name: configre wordpress
+      template:
+        src: ../templates/wp-config.j2
+        dest: /var/www/wordpress/wp-config.php
+      vars:
+        mariadb_wordpress_dbhost: "{{ hostvars[groups['db'][0]]['ansible_enp0s8']['ipv4']['address'] }}"
+      notify: restart php-fpm
 
   handlers:
     - name: restart php-fpm
