@@ -119,8 +119,8 @@
 
     - name: check wp dir exists
       file:
-        name: /var/www/wordpress
-        state: directory
+        name: /var/www/wordpress/index.php
+        state: file
       ignore_errors: yes
       register: wp_exists
 
@@ -130,6 +130,7 @@
         dest: /var/www
         remote_src: true
         owner: nginx
+        group: nginx
       when: wp_exists|failed
   
     - name: configre wordpress
