@@ -1,6 +1,5 @@
 mariadb_wordpress_user: wp_user
 mariadb_wordpress_pass: wp_pass
-
-domainname: wordpress.local
+domainname: localhost
 wp_root: /var/www/wordpress/html/wordpress
 upstream_addr: http://192.168.128.102/wordpress
