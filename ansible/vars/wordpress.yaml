@@ -1,2 +1,5 @@
-mariadb_wordpress_user: wp_user
-mariadb_wordpress_pass: wp_pass
+mariadb_wordpress_dbuser: wp_user
+mariadb_wordpress_dbpass: wp_pass
+mariadb_wordpress_dbname: wordpress
+domainname: node-03
+wp_root: /var/www/wordpress/

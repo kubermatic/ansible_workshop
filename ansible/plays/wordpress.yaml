@@ -2,7 +2,8 @@
 - name: Install epel on all hosts
   hosts: wordpress
   tasks: 
-    - yum:
+    - name: install epel/gather facts
+      yum:
         name: epel-release
         state: latest
       become: yes
@@ -15,38 +16,131 @@
     - ../vars/wordpress.yaml
 
   tasks:
-    - yum:
+    - name: install mariadb-server
+      yum:
         name: mariadb-server
         state: latest
 
-    - systemd:
+    - name: enable mariadb daemon
+      systemd:
         name: mariadb
         enabled: yes
         state: started
 
-    - mysql_user:
-        name: '{{ mariadb_wordpress_user }}'
-        password: '{{ mariadb_wordpress_pass }}'
+    - name: create mariadb user
+      mysql_user:
+        name: '{{ mariadb_wordpress_dbuser }}'
+        password: '{{ mariadb_wordpress_dbpass }}'
         priv: '*.*:ALL'
         state: present
+
+    - name: create wordpress db
+      mysql_db:
+        name: '{{ mariadb_wordpress_dbname }}'
+        state: present 
 
 - name: install php-fpm
   hosts: php-fpm
   become: yes
   tasks:
-    - yum:
+
+    - name: install php-fpm
+      yum:
         name: php-fpm
         state: latest
-    - lineinfile:
+
+    - name: configure php-fpm listen addr 
+      lineinfile:
         path: /etc/php-fpm.d/www.conf
         regexp: '^listen ='
-        line: "listen = '{{ hostvars[groups['php-fpm'][0]]['ansible_enp0s8']['ipv4']['address'] }}'"
-    - lineinfile:
+        line: "listen = {{ hostvars[groups['php-fpm'][0]]['ansible_enp0s8']['ipv4']['address'] }}:9000"
+      notify: restart php-fpm
+
+    - name: configure php-fpm allowed addr
+      lineinfile:
         path: /etc/php-fpm.d/www.conf
         regexp: '^listen.allowed_clients ='
-        line: "listen.allowed_clients = '{{ hostvars[groups['web'][0]]['ansible_enp0s8']['ipv4']['address'] }}'"
-    - systemd:
+        line: "listen.allowed_clients = {{ hostvars[groups['web'][0]]['ansible_enp0s8']['ipv4']['address'] }}"
+      notify: restart php-fpm
+
+    - name: enable php-fpm daemon
+      systemd:
         name: php-fpm
         enabled: yes
-        state: started
 
+  handlers:
+    - name: restart php-fpm
+      service:
+        name: php-fpm
+        state: restarted
+
+- name: install/configure nginx
+  hosts: web
+  become: yes
+  vars_files:
+        - ../vars/wordpress.yaml
+
+  tasks:
+
+    - name: install nginx
+      yum:
+        name: nginx
+        state: latest
+
+    - name: enable nginx
+      systemd:
+        name: nginx
+        enabled: yes
+
+    - name: create sites-dir
+      file:
+        path: /etc/nginx/sites-enabled
+        state: directory
+
+    - name: add include
+      lineinfile:
+        dest: /etc/nginx/nginx.conf
+        insertafter: "http {" 
+        line: "include /etc/nginx/sites-enabled/*;"
+      notify: reload nginx
+    
+    - name: create wordpress site
+      template:
+        src: ../templates/wordpress.nginx.j2
+        dest: /etc/nginx/sites-enabled/wordpress
+      vars:
+        upstream_addr: "{{ hostvars[groups['php-fpm'][0]]['ansible_enp0s8']['ipv4']['address'] }}"
+      notify: reload nginx
+
+    - name: create www dir
+      file:
+        name: /var/www
+        state: directory
+
+    - name: check wp dir exists
+      file:
+        name: /var/www/wordpress
+        state: directory
+      ignore_errors: yes
+      register: wp_exists
+
+    - name: download/unarchive wp
+      unarchive:
+        src: https://wordpress.org/latest.tar.gz
+        dest: /var/www
+        remote_src: true
+        owner: nginx
+      when: wp_exists|failed
+  
+    - name: configre wordpress
+      template:
+        src: ../templates/wp-config.j2
+        dest: /var/www/wordpress/wp-config.php
+      vars:
+        mariadb_wordpress_dbhost: "{{ hostvars[groups['db'][0]]['ansible_enp0s8']['ipv4']['address'] }}"
+
+  handlers:
+    - name: reload nginx
+      service:
+        name: nginx
+        state: reloaded
