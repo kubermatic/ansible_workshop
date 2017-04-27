@@ -41,12 +41,56 @@
         path: /etc/php-fpm.d/www.conf
         regexp: '^listen ='
         line: "listen = '{{ hostvars[groups['php-fpm'][0]]['ansible_enp0s8']['ipv4']['address'] }}'"
+      notify: restart php-fpm
     - lineinfile:
         path: /etc/php-fpm.d/www.conf
         regexp: '^listen.allowed_clients ='
         line: "listen.allowed_clients = '{{ hostvars[groups['web'][0]]['ansible_enp0s8']['ipv4']['address'] }}'"
+      notify: restart php-fpm
     - systemd:
         name: php-fpm
         enabled: yes
-        state: started
+  handlers:
+    - name: restart php-fpm
+      service:
+        name: php-fpm
+        enabled: yes
+        state: restarted
 
+- name: Install/Configure nginx
+  become: yes
+  hosts: web
+  tasks: 
+    - name: Install nginx
+      yum:
+        name: nginx
+        state: latest
+    - name: Start nginx service via systemd and ensure its started during boot
+      systemd:
+        name: nginx
+        enabled: yes
+        state: started
+    - name: Add sites-enabled support to nginx
+      file:
+        path: /etc/nginx/sites-enabled
+        state: directory
+    - name: Add this to nginx conf file
+      lineinfile:
+        path: /etc/nginx/nginx.conf
+        line: 'include /etc/nginx/sites-enabled/*;'
+      notify: restart nginx
+  handlers:
+    - name: restart nginx
+      service:
+        name: nginx
+        state: restarted
+
+#- name: Install/Configure wordpress
+#  become: yes
+#  hosts: php-
+#  tasks: 
+#    - name: Add directory for web stuff
+#      file:
+#        path: /var/www/example/html/
+#        state: directory
+      
