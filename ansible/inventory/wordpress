@@ -1,0 +1,13 @@
+[db]
+node-01
+
+[php-fpm]
+node-02
+
+[web]
+node-03
+
+[wordpress:children]
+db
+php-fpm
+web
