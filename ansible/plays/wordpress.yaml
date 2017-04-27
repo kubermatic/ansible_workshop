@@ -30,6 +30,11 @@
         priv: '*.*:ALL'
         state: present
 
+    - name: create the wordpress database
+      mysql_db:
+        name: '{{ mariadb_wordpress_dbname }}'
+        state: present
+
 - name: install php-fpm
   hosts: php-fpm
   become: yes
@@ -40,12 +45,12 @@
     - lineinfile:
         path: /etc/php-fpm.d/www.conf
         regexp: '^listen ='
-        line: "listen = '{{ hostvars[groups['php-fpm'][0]]['ansible_enp0s8']['ipv4']['address'] }}'"
+        line: "listen = {{ hostvars[groups['php-fpm'][0]]['ansible_enp0s8']['ipv4']['address'] }}:9000"
       notify: restart php-fpm
     - lineinfile:
         path: /etc/php-fpm.d/www.conf
         regexp: '^listen.allowed_clients ='
-        line: "listen.allowed_clients = '{{ hostvars[groups['web'][0]]['ansible_enp0s8']['ipv4']['address'] }}'"
+        line: "listen.allowed_clients = {{ hostvars[groups['web'][0]]['ansible_enp0s8']['ipv4']['address'] }}"
       notify: restart php-fpm
     - systemd:
         name: php-fpm
@@ -93,18 +98,28 @@
         upstream_addr: "{{ hostvars[groups['php-fpm'][0]]['ansible_enp0s8']['ipv4']['address'] }}"
       notify: reload nginx
 
+    - name: create www dir
+      file:
+        path: /var/www/
+        state: directory
+
+    - name: download/unarchive wp
+      unarchive:
+        src: https://wordpress.org/latest.tar.gz
+        dest: /var/www
+        remote_src: true
+        validate_certs: no
+
+    - name: create wordpress config file
+      template:
+        src: ../templates/wp-config-sample.php.j2
+        dest: /var/www/wordpress/wp-config.php
+      vars:
+        mariadb_wordpress_dbhost: "{{ hostvars[groups['db'][0]]['ansible_enp0s8']['ipv4']['address'] }}"
+
   handlers:
     - name: reload nginx
       service:
         name: nginx
         state: reloaded
 
-#- name: Install/Configure wordpress
-#  become: yes
-#  hosts: php-
-#  tasks: 
-#    - name: Add directory for web stuff
-#      file:
-#        path: /var/www/example/html/
-#        state: directory
-      
