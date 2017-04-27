@@ -1,0 +1,10 @@
+---
+
+- hosts: all
+
+  tasks:
+    - name: install bash_profile
+      copy:
+        dest: ~/.bash_profile
+        src: ../files/dot_bash_profile
+

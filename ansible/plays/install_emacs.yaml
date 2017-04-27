@@ -1,0 +1,14 @@
+---
+
+- hosts: all
+
+  tasks:
+    - name: install emacs
+      yum:
+        name: emacs
+        state: present
+      become: yes
+    - name: make an empty emacs configuration file present
+      copy:
+        dest: ~/.emacs
+        src: ../files/dot_emacs
