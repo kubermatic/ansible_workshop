@@ -1,8 +1,9 @@
 ---
 - name: Install epel on all hosts
   hosts: wordpress
-  tasks: 
-    - name: install epel/gather facts
+
+  tasks:
+    - name: install epel
       yum:
         name: epel-release
         state: latest
@@ -38,7 +39,7 @@
     - name: create wordpress db
       mysql_db:
         name: '{{ mariadb_wordpress_dbname }}'
-        state: present 
+        state: present
 
 - name: install php-fpm
   hosts: php-fpm
@@ -47,7 +48,6 @@
         - ../vars/wordpress.yaml
 
   tasks:
-
     - name: install php-fpm
       yum:
         name: php-fpm
@@ -58,7 +58,7 @@
         name: php-mysql
         state: latest
 
-    - name: configure php-fpm listen addr 
+    - name: configure php-fpm listen addr
       lineinfile:
         path: /etc/php-fpm.d/www.conf
         regexp: '^listen ='
@@ -117,7 +117,6 @@
         - ../vars/wordpress.yaml
 
   tasks:
-
     - name: install nginx
       yum:
         name: nginx
@@ -136,10 +135,10 @@
     - name: add include
       lineinfile:
         dest: /etc/nginx/nginx.conf
-        insertafter: "http {" 
+        insertafter: "http {"
         line: "include /etc/nginx/sites-enabled/*;"
       notify: reload nginx
-    
+
     - name: create wordpress site
       template:
         src: ../templates/wordpress.nginx.j2
@@ -168,7 +167,7 @@
         owner: nginx
         group: nginx
       when: wp_exists|failed
-  
+
     - name: configre wordpress
       template:
         src: ../templates/wp-config.j2
