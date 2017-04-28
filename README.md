@@ -1,13 +1,16 @@
-# ansible_workshop
+# Ansible Workshop in Otto's HQ
 
 * Clone the repo
-* ```bash
+
+```bash
   cd ansible_workshop/vagrant
   vagrant up
   vagrant ssh node-01
 ```
+
 * On the VM
-* ```bash
+
+```bash
   cd /vagrant/ansible
   ansible-playbook plays/wordpress.yaml
 ```
