@@ -12,9 +12,9 @@ Vagrant.configure("2") do |config|
       config.vm.network "private_network", ip: "192.168.128.#{x+100}"
       config.vm.hostname = vm_name
       config.vm.provision "shell", path: "provision.sh"
-      #if x == $instances
-      #  config.vm.network "forwarded_port", guest: 80, host: 7081
-      #end
+      if x == $instances
+        config.vm.network "forwarded_port", guest: 80, host: 7081
+      end
     end
   end
 end
